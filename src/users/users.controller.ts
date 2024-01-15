@@ -1,31 +1,39 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Injectable } from '@nestjs/common';
+import { User } from './user.model';
 
-import { User } from './schemas/user.schema';
-import { UsersService } from './users.service';
+@Injectable()
+export class UserService {
+  private users: User[] = [];
 
-@Controller('users')
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
-
-  @Get(':userId')
-  async getUser(@Param('userId') userId: string): Promise<User> {
-    return this.usersService.getUserById(userId);
+  getAllUsers(): User[] {
+    return this.users;
   }
 
-  @Get()
-  async getUsers(): Promise<User[]> {
-      return this.usersService.getUsers();
+  getUserById(id: number): User {
+    return this.users.find(user => user.id === id);
   }
 
-  @Post()
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
-      return this.usersService.createUser(createUserDto)
+  getUserByEmail(email: string): User {
+    return this.users.find(user => user.email === email);
   }
 
-  @Patch(':userId')
-  async updateUser(@Param('userId') userId: string, @Body() updateUserDto: UpdateUserDto): Promise<User> {
-      return this.usersService.updateUser(userId, updateUserDto);
+  createUser(user: User): void {
+    const existingUser = this.getUserByEmail(user.email);
+    if (!existingUser) {
+      this.users.push(user);
+    } else {
+      throw new Error('Email is already in use');
+    }
+  }
+
+  updateUser(id: number, updatedUser: User): void {
+    const index = this.users.findIndex(user => user.id === id);
+    if (index !== -1) {
+      this.users[index] = updatedUser;
+    }
+  }
+
+  deleteUser(id: number): void {
+    this.users = this.users.filter(user => user.id !== id);
   }
 }
